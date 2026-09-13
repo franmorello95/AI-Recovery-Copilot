@@ -1,0 +1,4619 @@
+{
+  "name": "Entrega Final CH: Copiloto de Aseguradora",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "timeout": 60000,
+          "maxRetries": 2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        16
+      ],
+      "id": "40d92610-4c72-4592-8e47-0bb20e64d33f",
+      "name": "OpenAI Chat Model",
+      "notes": "Analiza semánticamente expedientes para detectar señales de recupero.\nNo decide responsabilidad legal ni acción final."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -528,
+        -176
+      ],
+      "id": "42cfbef7-442f-4ac1-ae4b-d83819ba234b",
+      "name": "01 - Schedule Diario (Trigger)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "filterByFormula": "=AND(\n  {Estado} = 'Pendiente',\n  NOT({Derivado a recupero})\n)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        -176
+      ],
+      "id": "80d5fce5-3581-47ff-88a3-b3063ee17755",
+      "name": "02 - Buscar Expedientes Pendientes (Airtable)",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "12049ea8-ec64-4762-8659-4e011ae2ae14",
+              "leftValue": "={{ $json.fields.Ramo }}",
+              "rightValue": "Vida",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        -176
+      ],
+      "id": "8c736191-7897-4bfd-9005-477eaf5a2417",
+      "name": "03 - Validar Ramo Elegible (IF)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c6783f2f-bac4-4489-9491-491db2fd1e00",
+              "leftValue": "={{ $json.fields['Relato asegurado'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        160,
+        -288
+      ],
+      "id": "6a170fa7-6bcc-4d4a-b884-70edf7cf11b4",
+      "name": "04 - Validar Relato Mínimo (IF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee2c2ca3-96a7-4a0f-b3dd-74e339c31034",
+              "name": "fields['ID Expediente']",
+              "value": "={{ $json.fields['ID Expediente'] }}",
+              "type": "string"
+            },
+            {
+              "id": "1c9d3cea-b863-46d8-98a4-1468e38cb4d7",
+              "name": "fields['Ramo']",
+              "value": "={{ $json.fields.Ramo }}",
+              "type": "string"
+            },
+            {
+              "id": "cce5645c-fa15-4a2b-b3f2-e00ed787c452",
+              "name": "fields['Tipo de siniestro']",
+              "value": "={{ $json.fields['Tipo de siniestro'] }}",
+              "type": "string"
+            },
+            {
+              "id": "14885e5e-04de-4f78-87d0-2f35cbb239b4",
+              "name": "fields['Relato asegurado']",
+              "value": "={{ $json.fields['Relato asegurado'] }}",
+              "type": "string"
+            },
+            {
+              "id": "7750626d-fb0a-41b6-b89d-0aeeb014f522",
+              "name": "fields['Nota analista']",
+              "value": "={{ $json.fields['Nota analista'] }}",
+              "type": "string"
+            },
+            {
+              "id": "3629a093-a956-48ab-bb4d-2bda266cafd6",
+              "name": "fields['Informe policial']",
+              "value": "={{ $json.fields['Informe policial'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ebb2c5b0-5ced-456c-b259-b332af44b886",
+              "name": "fields['Fragmento contractual']",
+              "value": "={{ $json.fields['Fragmento contractual'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        400,
+        -352
+      ],
+      "id": "8458daf6-37f8-4425-931b-c8871e208dee",
+      "name": "05 - Preparar Input IA (Edit Fields)",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "text": "=ID expediente: {{ $json.fields['ID Expediente'] }}\nRamo: {{ $json.fields['Ramo'] }}\nTipo de siniestro: {{ $json.fields['Tipo de siniestro'] }}\n\nRelato del asegurado:\n{{ $json.fields['Relato asegurado'] }}\n\nNota del analista/liquidador:\n{{ $json.fields['Nota analista'] }}\n\nInforme policial:\n{{ $json.fields['Informe policial'] }}\n\nFragmento contractual:\n{{ $json.fields['Fragmento contractual'] }}",
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"tercero_mencionado\": {\n      \"type\": \"boolean\"\n    },\n    \"tercero_identificable\": {\n      \"type\": \"string\",\n      \"enum\": [\"si\", \"parcial\", \"no\"]\n    },\n    \"senales_responsabilidad\": {\n      \"type\": \"string\",\n      \"enum\": [\"ninguna\", \"bajas\", \"medias\", \"altas\"]\n    },\n    \"contradicciones_detectadas\": {\n      \"type\": \"boolean\"\n    },\n    \"detalle_contradicciones\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"informacion_faltante\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"limitacion_contractual\": {\n      \"type\": \"string\",\n      \"enum\": [\"detectada\", \"no_detectada\", \"no_evaluable\"]\n    },\n    \"detalle_limitacion\": {\n      \"type\": \"string\"\n    },\n    \"resumen_semantico\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"tercero_mencionado\",\n    \"tercero_identificable\",\n    \"senales_responsabilidad\",\n    \"contradicciones_detectadas\",\n    \"detalle_contradicciones\",\n    \"informacion_faltante\",\n    \"limitacion_contractual\",\n    \"detalle_limitacion\",\n    \"resumen_semantico\"\n  ],\n  \"additionalProperties\": false\n}",
+        "options": {
+          "systemPromptTemplate": "Sos un asistente especializado en preanálisis de oportunidades de recupero para una aseguradora.\n\nTu tarea es analizar exclusivamente la información proporcionada sobre un expediente de siniestro y extraer señales semánticas útiles para que un especialista humano evalúe una posible oportunidad de recupero.\n\nReglas:\n\n- Utilizá únicamente la información proporcionada.\n- No inventes ni completes información ausente.\n- No determines responsabilidad legal definitiva.\n- No determines si corresponde iniciar un recupero.\n- No realices conclusiones sobre fraude.\n- No calcules impacto económico, urgencia ni Recovery Score.\n- La ausencia de un documento no implica por sí misma que el caso sea inviable.\n- Si un documento figura como NO_DISPONIBLE, tratá su contenido como no disponible.\n- Distinguí entre un tercero simplemente mencionado y un tercero suficientemente identificable.\n- Detectá contradicciones relevantes entre las distintas fuentes.\n\n- Clasificá \"senales_responsabilidad\" así:\n  - ninguna: no existen indicios concretos que vinculen al tercero con el hecho.\n  - bajas: existe una mención o indicio débil, sin elementos claros sobre conducta o causalidad.\n  - medias: existen indicios concretos de posible responsabilidad, pero hay ambigüedad, versiones enfrentadas o evidencia contradictoria.\n  - altas: existen múltiples indicios consistentes y convergentes que apuntan al tercero.\n\n- Las señales de responsabilidad representan únicamente indicios presentes en el expediente, no una determinación jurídica.\n\n- En \"informacion_faltante\", incluí únicamente información o documentación cuya ausencia esté explícitamente indicada en el expediente.\n- No propongas nueva evidencia, peritajes, fotografías, testigos, registros audiovisuales, informes técnicos ni documentación hipotética que no haya sido mencionada.\n- No incluyas la ausencia del fragmento contractual en \"informacion_faltante\" si ya fue representada mediante \"limitacion_contractual = no_evaluable\".\n\n- Evaluá una posible limitación contractual únicamente cuando exista información contractual suficiente.\n- Si no existe información contractual suficiente, utilizá \"no_evaluable\".\n- No interpretes la ausencia de información contractual como una limitación contractual.\n- Si \"fragmento_contractual\" es NO_DISPONIBLE, no lo incluyas en \"informacion_faltante\". Representá esa ausencia únicamente mediante \"limitacion_contractual = no_evaluable\" y \"detalle_limitacion\".\n\n- El resumen semántico debe ser breve, factual y no contener una decisión final.\n- El resumen semántico no debe agregar información que no esté presente en el expediente.\n\nRespondé respetando estrictamente el esquema estructurado solicitado."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        -160
+      ],
+      "id": "87ad560b-7b71-4411-8b0c-43ae9ff6240f",
+      "name": "06 - Extraer Señales Semánticas (IA)",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Logs Ejecuciones"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Error": true,
+            "ID Ejecución": "={{ 'ERR-' + $now.toMillis() }}",
+            "Fecha": "={{ $now.toISO() }}",
+            "Etapa": "Information Extractor",
+            "Resultado": "Error",
+            "Mensaje error": "={{ $json.error?.message || $json.message || 'Error no especificado en Information Extractor' }}",
+            "Expediente": "={{ [ $('02 - Buscar Expedientes Pendientes (Airtable)').item.json.id ] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Ejecución",
+              "displayName": "ID Ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expediente",
+              "displayName": "Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Etapa",
+              "displayName": "Etapa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resultado",
+              "displayName": "Resultado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mensaje error",
+              "displayName": "Mensaje error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        112
+      ],
+      "id": "cd038301-2d4f-422f-aa58-93896a37e2c6",
+      "name": "ERR-01 - Registrar Error IA (Airtable)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a4abe589-5cff-46d8-9477-be056c3d523c",
+              "name": "Potencial Score",
+              "value": "={{\n  ($json.output.tercero_mencionado ? 25 : 0)\n  +\n  ($json.output.tercero_identificable === 'si' ? 25 :\n   $json.output.tercero_identificable === 'parcial' ? 12 : 0)\n  +\n  ($json.output.senales_responsabilidad === 'altas' ? 50 :\n   $json.output.senales_responsabilidad === 'medias' ? 30 :\n   $json.output.senales_responsabilidad === 'bajas' ? 15 : 0)\n}}",
+              "type": "number"
+            },
+            {
+              "id": "9bfa8443-2151-4208-afd3-79f3be5f6fb5",
+              "name": "Airtable Record ID",
+              "value": "={{ $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fac196b9-df21-4374-9193-e3d9632394f1",
+              "name": "ID Expediente",
+              "value": "={{ $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['ID Expediente'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4703945a-184c-433c-9687-1d012e4611d6",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1136,
+        -176
+      ],
+      "id": "c7b321d1-b82f-48dc-9a99-75585cf3c496",
+      "name": "07 - Calcular Potencial (Scoring)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48ca290e-a005-4113-bf93-ada793d65ee3",
+              "name": "Impacto Score",
+              "value": "={{\n  $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['Monto pagado'] < 1000000 ? 20 :\n  $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['Monto pagado'] < 5000000 ? 40 :\n  $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['Monto pagado'] < 20000000 ? 60 :\n  $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['Monto pagado'] < 50000000 ? 80 :\n  100\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        -176
+      ],
+      "id": "e5b2498a-378e-4393-b1f5-2a6cdb087983",
+      "name": "08 - Calcular Impacto (Scoring)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5bceb6d3-165d-45ad-8ea1-8ad3653f27d1",
+              "name": "Urgencia Score",
+              "value": "={{\n  (() => {\n    const fechaPago = new Date(\n      $('02 - Buscar Expedientes Pendientes (Airtable)').all()[$itemIndex].json.fields['Fecha pago']\n    );\n\n    const hoy = new Date();\n\n    const dias = Math.floor((hoy - fechaPago) / (1000 * 60 * 60 * 24));\n\n    return dias < 90 ? 10 :\n           dias < 180 ? 30 :\n           dias < 365 ? 65 :\n           100;\n  })()\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1584,
+        -176
+      ],
+      "id": "3f4b6220-c68c-455b-9699-ca6e8b70cd94",
+      "name": "09 - Calcular Urgencia (Scoring)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3359fdf2-ae10-40f6-b5dc-79377d56afa0",
+              "name": "Evidence Score",
+              "value": "={{\n  (() => {\n    let score = 100;\n\n    if ($json.output.contradicciones_detectadas) {\n      score -= 40;\n    }\n\n    const faltantes = $json.output.informacion_faltante?.length || 0;\n\n    if (faltantes === 1) {\n      score -= 20;\n    } else if (faltantes === 2) {\n      score -= 35;\n    } else if (faltantes >= 3) {\n      score -= 50;\n    }\n\n    return Math.max(score, 10);\n  })()\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1808,
+        -176
+      ],
+      "id": "0c129f72-3fc0-48aa-ac79-8da6826dd154",
+      "name": "10 - Calcular Evidencia (Scoring)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "160a1d3f-d177-49eb-b49d-09ce7bfbcbcf",
+              "name": "Recovery Score",
+              "value": "={{\n  Math.round(\n    ($json[\"Potencial Score\"] * 0.30) +\n    ($json[\"Impacto Score\"] * 0.30) +\n    ($json[\"Urgencia Score\"] * 0.25) +\n    ($json[\"Evidence Score\"] * 0.15)\n  )\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2032,
+        -176
+      ],
+      "id": "6b6389d3-79dd-4237-95e3-51a2a92b26cd",
+      "name": "11 - Calcular Recovery Score (Scoring)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7719b849-85b9-4ebb-8ef8-d4bfc669d882",
+              "leftValue": "={{ $json.output.tercero_mencionado }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        -176
+      ],
+      "id": "1d2ee744-76ee-4ecd-8c6f-e3c9cfbbc45a",
+      "name": "12 - Validar Tercero (IF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "df5fcb99-cb50-4961-ad0b-d8d93bed5123",
+              "name": "Estado screening",
+              "value": "No elegible por regla",
+              "type": "string"
+            },
+            {
+              "id": "246d2732-05a5-464f-b25e-f4a19cd97441",
+              "name": "Motivo",
+              "value": "No se identificó intervención de un tercero en el expediente.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2480,
+        128
+      ],
+      "id": "3043ce48-5362-440e-8f0e-41dec157aa8d",
+      "name": "13A - Marcar No Elegible (Edit Fields)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Procesado por IA": true,
+            "id": "={{ $json[\"Airtable Record ID\"] }}",
+            "Estado": "No elegible por regla",
+            "Fecha última ejecución": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2704,
+        128
+      ],
+      "id": "7cbaeab9-5667-4897-8bbc-8f1a88b932b8",
+      "name": "13B - Actualizar No Elegible (Airtable)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fbfa6adf-eb86-47e8-a74a-17ec47f7c029",
+              "leftValue": "={{ $json.output.limitacion_contractual }}",
+              "rightValue": "detectada",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -272
+      ],
+      "id": "cb742533-d37e-474e-83b8-bdc76c2bf235",
+      "name": "14 - Detectar Limitación Contractual (IF)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c5dc524-fbf8-4f02-b945-1bddbfb545bd",
+              "name": "Alerta Legal",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "43683d89-6c29-4313-90f3-69cf02c445c4",
+              "name": "Detalle Alerta",
+              "value": "={{ $json.output.detalle_limitacion }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2704,
+        -368
+      ],
+      "id": "8013ed3b-c007-4a52-9ee7-db70ed667f54",
+      "name": "15A - Activar Alerta Legal (Edit Fields)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "55c06b51-1b78-49bb-9db1-197e2abd555c",
+              "name": "Alerta Legal",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "b0bd3fab-44f1-4415-b1e5-ca24b6155d82",
+              "name": "Detalle Alerta",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2704,
+        -144
+      ],
+      "id": "d2718ee0-aca6-4b6f-a0fc-77346ac1a37e",
+      "name": "15B - Sin Alerta Legal (Edit Fields)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2928,
+        -272
+      ],
+      "id": "39c0649b-6717-4cdc-b2c8-bfd47b4719ca",
+      "name": "16 - Unificar Ramas (Merge)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "49412609-485e-4a50-97fb-8d842afbbbd6",
+              "name": "Estado screening",
+              "value": "Pendiente revisión humana",
+              "type": "string"
+            },
+            {
+              "id": "0da9a9b4-053b-4add-9456-ed6988816871",
+              "name": "Requiere revisión humana",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "39cd7bae-1eca-4064-90d4-358dabda4b57",
+              "name": "Prioridad",
+              "value": "={{   $json[\"Urgencia Score\"] >= 100 ? \"Crítica\" :   $json[\"Recovery Score\"] >= 80 ? \"Alta\" :   $json[\"Recovery Score\"] >= 60 ? \"Media\" :   \"Baja\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3152,
+        -272
+      ],
+      "id": "55aa77ec-d912-44fb-ab3c-53198585d510",
+      "name": "17 - Asignar Prioridad (Scoring)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f53405e1-0762-44bd-82da-1b11321afb89",
+              "name": "Mini informe",
+              "value": "={{\n  `Resumen: ${$json.output.resumen_semantico}\nPotencial: ${$json[\"Potencial Score\"]}/100\nImpacto: ${$json[\"Impacto Score\"]}/100\nUrgencia: ${$json[\"Urgencia Score\"]}/100\nEvidencia: ${$json[\"Evidence Score\"]}/100\nRecovery Score: ${$json[\"Recovery Score\"]}/100\nPrioridad: ${$json[\"Prioridad\"]}\nAlerta legal: ${$json[\"Alerta Legal\"] ? \"Sí\" : \"No\"}\nInformación faltante: ${$json.output.informacion_faltante.length ? $json.output.informacion_faltante.join(\", \") : \"Ninguna\"}`\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3376,
+        -272
+      ],
+      "id": "339ad9c5-f828-4a6a-aa32-ff590fef88e1",
+      "name": "18 - Generar Mini Informe (Edit Fields)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Procesado por IA": true,
+            "Potencial score": "={{ $json['Potencial Score'] }}",
+            "Impacto score": "={{ $json['Impacto Score'] }}",
+            "Urgencia score": "={{ $json['Urgencia Score'] }}",
+            "Evidencia score": "={{ $json['Evidence Score'] }}",
+            "Recovery score": "={{ $json['Recovery Score'] }}",
+            "Mini informe": "={{ $json['Mini informe'] }}",
+            "Estado": "Pendiente revisión humana",
+            "Fecha última ejecución": "={{ $now.toISO() }}",
+            "id": "={{ $json[\"Airtable Record ID\"] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA copy 2",
+              "displayName": "Procesado por IA copy 2",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Procesado por IA copy",
+              "displayName": "Procesado por IA copy",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3600,
+        -272
+      ],
+      "id": "a59e15e5-9e3e-44ce-b3e7-161f7d88b169",
+      "name": "19 - Guardar Análisis (Airtable)",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "reviewer@example.com",
+        "subject": "=Revisión Recovery Copilot - {{ $json.fields[\"ID Expediente\"] }}",
+        "message": "Revisar expediente:\nhttps://YOUR_N8N_DOMAIN/form/YOUR_FORM_ID",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        -192
+      ],
+      "id": "9ab55518-d5bd-4b5c-88e2-a269d9742cef",
+      "name": "20 - Solicitar Revisión Humana (Gmail HITL)",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Procesado por IA": false,
+            "id": "={{ $('02 - Buscar Expedientes Pendientes (Airtable)').item.json.id }}",
+            "Estado": "Información insuficiente",
+            "Fecha última ejecución": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "f45a7d65-4928-4374-ad1d-c7fc20a7370c",
+      "name": "04A - Marcar Información Insuficiente (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Procesado por IA": false,
+            "id": "={{ $('02 - Buscar Expedientes Pendientes (Airtable)').item.json.id }}",
+            "Estado": "No elegible por regla",
+            "Fecha última ejecución": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        128
+      ],
+      "id": "ff1b0244-e4ab-4865-aa2c-071bcbbd6626",
+      "name": "03A - Marcar No Elegible por Ramo (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Logs Ejecuciones"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Error": false,
+            "ID Ejecución": "={{ 'OK-' + $now.toMillis() }}",
+            "Expediente": "={{ [ $json.id ] }}",
+            "Fecha": "={{ $now.toISO() }}",
+            "Etapa": "Procesamiento IA",
+            "Resultado": "Éxito"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Ejecución",
+              "displayName": "ID Ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expediente",
+              "displayName": "Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Etapa",
+              "displayName": "Etapa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resultado",
+              "displayName": "Resultado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mensaje error",
+              "displayName": "Mensaje error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        -416
+      ],
+      "id": "edfdfbda-03ea-432c-88fc-c8d0f1b59888",
+      "name": "LOG-01 - Registrar Procesamiento Exitoso (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Revisiones Humanas"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID Revisión": "={{ 'REV-' + $json.fields[\"ID Expediente\"] + '-' + $now.toMillis() }}",
+            "Expediente": "={{ [ $json.id ] }}",
+            "Decisión": "={{ $('HITL-01 - Recibir Revisión Humana (Form Trigger)').item.json[\"Decisión\"] }}",
+            "Fecha revisión": "={{ $('HITL-01 - Recibir Revisión Humana (Form Trigger)').item.json.submittedAt || $now.toISO() }}",
+            "Comentario analista": "={{ $('HITL-01 - Recibir Revisión Humana (Form Trigger)').item.json[\"Comentario analista\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Revisión",
+              "displayName": "ID Revisión",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expediente",
+              "displayName": "Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Decisión",
+              "displayName": "Decisión",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aprobar para recupero",
+                  "value": "Aprobar para recupero"
+                },
+                {
+                  "name": "Solicitar información",
+                  "value": "Solicitar información"
+                },
+                {
+                  "name": "No priorizar",
+                  "value": "No priorizar"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comentario analista",
+              "displayName": "Comentario analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha revisión",
+              "displayName": "Fecha revisión",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        704
+      ],
+      "id": "f7c1bb48-0709-480b-b3a3-2ab2ad94a994",
+      "name": "21 - Registrar Revisión Humana (Airtable)"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.fields[\"Decisión\"] }}",
+                    "rightValue": "Aprobar para recupero",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "af24d9fb-0af6-4ced-9d5a-b9427402ffa4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Aprobar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "644e721e-1e34-4cb6-8fef-6b98fddcaccd",
+                    "leftValue": "={{ $json.fields[\"Decisión\"] }}",
+                    "rightValue": "Solicitar información",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Solicitar info"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5ee3a980-ddc7-49a8-8270-9e6f9633f866",
+                    "leftValue": "={{ $json.fields[\"Decisión\"] }}",
+                    "rightValue": "No priorizar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No priorizar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1936,
+        688
+      ],
+      "id": "62685cdf-41cb-4720-ae2e-259798293165",
+      "name": "22 - Enrutar Decisión Humana (Switch)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Derivado a recupero": true,
+            "Estado": "Aprobado para recupero",
+            "id": "={{ $json.fields[\"Expediente\"][0] }}",
+            "Fecha última ejecución": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        512
+      ],
+      "id": "808b1596-e37d-4d87-b4d8-3789c70aed58",
+      "name": "23A - Aprobar Recupero (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.fields[\"Expediente\"][0] }}",
+            "Fecha última ejecución": "={{ $now.toISO() }}",
+            "Estado": "Información insuficiente"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        704
+      ],
+      "id": "2132adae-3a0e-42fa-80f8-a17b7c24d373",
+      "name": "23B - Solicitar Información (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.fields[\"Expediente\"][0] }}",
+            "Fecha última ejecución": "={{ $now.toISO() }}",
+            "Estado": "No priorizado"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "ID Expediente",
+              "displayName": "ID Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Ramo",
+              "displayName": "Ramo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Auto",
+                  "value": "Auto"
+                },
+                {
+                  "name": "Hogar",
+                  "value": "Hogar"
+                },
+                {
+                  "name": "Comercio",
+                  "value": "Comercio"
+                },
+                {
+                  "name": "Consorcio",
+                  "value": "Consorcio"
+                },
+                {
+                  "name": "Vida",
+                  "value": "Vida"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tipo de siniestro",
+              "displayName": "Tipo de siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha siniestro",
+              "displayName": "Fecha siniestro",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha pago",
+              "displayName": "Fecha pago",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Monto pagado",
+              "displayName": "Monto pagado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "ARS",
+                  "value": "ARS"
+                },
+                {
+                  "name": "USD",
+                  "value": "USD"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Relato asegurado",
+              "displayName": "Relato asegurado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Nota analista",
+              "displayName": "Nota analista",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Informe policial",
+              "displayName": "Informe policial",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fragmento contractual",
+              "displayName": "Fragmento contractual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente revisión humana",
+                  "value": "Pendiente revisión humana"
+                },
+                {
+                  "name": "Información insuficiente",
+                  "value": "Información insuficiente"
+                },
+                {
+                  "name": "No elegible por regla",
+                  "value": "No elegible por regla"
+                },
+                {
+                  "name": "Aprobado para recupero",
+                  "value": "Aprobado para recupero"
+                },
+                {
+                  "name": "No priorizado",
+                  "value": "No priorizado"
+                },
+                {
+                  "name": "Error / Reintento",
+                  "value": "Error / Reintento"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Procesado por IA",
+              "displayName": "Procesado por IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha última ejecución",
+              "displayName": "Fecha última ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Potencial score",
+              "displayName": "Potencial score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Impacto score",
+              "displayName": "Impacto score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Urgencia score",
+              "displayName": "Urgencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Evidencia score",
+              "displayName": "Evidencia score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Recovery score",
+              "displayName": "Recovery score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mini informe",
+              "displayName": "Mini informe",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Revisiones Humanas",
+              "displayName": "Revisiones Humanas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Logs Ejecuciones",
+              "displayName": "Logs Ejecuciones",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Derivado a recupero",
+              "displayName": "Derivado a recupero",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        896
+      ],
+      "id": "797abc3b-f5b9-4d3e-827e-fadf62b8695a",
+      "name": "23C - No Priorizar (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Logs Ejecuciones"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Error": true,
+            "ID Ejecución": "={{ 'ERR-' + $now.toMillis() }}",
+            "Expediente": "={{ [ $('02 - Buscar Expedientes Pendientes (Airtable)').item.json.id ] }}",
+            "Fecha": "={{ $now.toISO() }}",
+            "Etapa": "Guardar Análisis Airtable",
+            "Resultado": "Error",
+            "Mensaje error": "={{ $json.error?.message || $json.message || 'Error no especificado al guardar análisis en Airtable' }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "ID Ejecución",
+              "displayName": "ID Ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expediente",
+              "displayName": "Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Etapa",
+              "displayName": "Etapa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resultado",
+              "displayName": "Resultado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mensaje error",
+              "displayName": "Mensaje error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        160
+      ],
+      "id": "e90f1c02-01e9-4d6a-ac8d-ea908179933b",
+      "name": "ERR-02 - Registrar Error Guardado (Airtable)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Logs Ejecuciones"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Error": true,
+            "ID Ejecución": "={{ 'ERR-' + $now.toMillis() }}",
+            "Expediente": "={{ [ $('19 - Guardar Análisis (Airtable)').item.json.id ] }}",
+            "Fecha": "={{ $now.toISO() }}",
+            "Etapa": "Notificación HITL Gmail",
+            "Resultado": "Error",
+            "Mensaje error": "={{ $json.error?.message || $json.message || 'Error no especificado al enviar solicitud HITL' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID Ejecución",
+              "displayName": "ID Ejecución",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expediente",
+              "displayName": "Expediente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Etapa",
+              "displayName": "Etapa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resultado",
+              "displayName": "Resultado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mensaje error",
+              "displayName": "Mensaje error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4208,
+        -48
+      ],
+      "id": "3dc901dc-5a65-4e7d-ad8d-c5aaa85af648",
+      "name": "ERR-03 - Registrar Error HITL (Airtable)"
+    },
+    {
+      "parameters": {
+        "formTitle": "Revisión Recovery Copilot",
+        "formDescription": "Revisión humana de expediente priorizado por AI Recovery Copilot.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Expediente",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Decisión",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Aprobar para recupero"
+                  },
+                  {
+                    "option": "Solicitar información"
+                  },
+                  {
+                    "option": "No priorizar"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Comentario analista",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        1296,
+        704
+      ],
+      "id": "ca60d3d1-fd12-431f-8d16-0e27266efde8",
+      "name": "HITL-01 - Recibir Revisión Humana (Form Trigger)"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "AI Recovery Copilot"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Expedientes"
+        },
+        "filterByFormula": "=AND(\n  {ID Expediente} = '{{ $json[\"Expediente\"] }}',\n  {Estado} = 'Pendiente revisión humana'\n)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1536,
+        704
+      ],
+      "id": "de25b06a-05e8-4a78-9a3d-d5dfa85f3a3a",
+      "name": "HITL-02 - Buscar Expediente (Airtable)"
+    },
+    {
+      "parameters": {
+        "content": "B. Análisis IA y Scoring",
+        "height": 800,
+        "width": 3088,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -416
+      ],
+      "id": "40490949-1205-440c-b1e4-84b46b1b590b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst requests = items.map((item) => {\n  const f = item.json.fields;\n\n  return {\n    custom_id: f[\"ID Expediente\"],\n    method: \"POST\",\n    url: \"/v1/chat/completions\",\n    body: {\n      model: \"gpt-5-mini\",\n\n      messages: [\n        {\n          role: \"system\",\n          content: `Sos un asistente especializado en preanálisis de oportunidades de recupero para una aseguradora.\n\nTu tarea es analizar exclusivamente la información proporcionada sobre un expediente de siniestro y extraer señales semánticas útiles para que un especialista humano evalúe una posible oportunidad de recupero.\n\nReglas:\n\n- Utilizá únicamente la información proporcionada.\n- No inventes ni completes información ausente.\n- No determines responsabilidad legal definitiva.\n- No determines si corresponde iniciar un recupero.\n- No realices conclusiones sobre fraude.\n- No calcules impacto económico, urgencia ni Recovery Score.\n- La ausencia de un documento no implica por sí misma que el caso sea inviable.\n- Si un documento figura como NO_DISPONIBLE, tratá su contenido como no disponible.\n- Distinguí entre un tercero simplemente mencionado y un tercero suficientemente identificable.\n- Detectá contradicciones relevantes entre las distintas fuentes.\n\n- Clasificá \"senales_responsabilidad\" así:\n  - ninguna: no existen indicios concretos que vinculen al tercero con el hecho.\n  - bajas: existe una mención o indicio débil, sin elementos claros sobre conducta o causalidad.\n  - medias: existen indicios concretos de posible responsabilidad, pero hay ambigüedad, versiones enfrentadas o evidencia contradictoria.\n  - altas: existen múltiples indicios consistentes y convergentes que apuntan al tercero.\n\n- Las señales de responsabilidad representan únicamente indicios presentes en el expediente, no una determinación jurídica.\n\n- En \"informacion_faltante\", incluí únicamente información o documentación cuya ausencia esté explícitamente indicada en el expediente.\n- No propongas nueva evidencia, peritajes, fotografías, testigos, registros audiovisuales, informes técnicos ni documentación hipotética que no haya sido mencionada.\n- No incluyas la ausencia del fragmento contractual en \"informacion_faltante\" si ya fue representada mediante \"limitacion_contractual = no_evaluable\".\n\n- Evaluá una posible limitación contractual únicamente cuando exista información contractual suficiente.\n- Si no existe información contractual suficiente, utilizá \"no_evaluable\".\n- No interpretes la ausencia de información contractual como una limitación contractual.\n- Si \"fragmento_contractual\" es NO_DISPONIBLE, no lo incluyas en \"informacion_faltante\". Representá esa ausencia únicamente mediante \"limitacion_contractual = no_evaluable\" y \"detalle_limitacion\".\n\n- El resumen semántico debe ser breve, factual y no contener una decisión final.\n- El resumen semántico no debe agregar información que no esté presente en el expediente.\n\nRespondé respetando estrictamente el esquema estructurado solicitado.`\n        },\n        {\n          role: \"user\",\n          content: JSON.stringify({\n            id_expediente: f[\"ID Expediente\"],\n            ramo: f[\"Ramo\"],\n            tipo_siniestro: f[\"Tipo de siniestro\"],\n            relato_asegurado: f[\"Relato asegurado\"],\n            nota_analista: f[\"Nota analista\"],\n            informe_policial: f[\"Informe policial\"],\n            fragmento_contractual: f[\"Fragmento contractual\"]\n          })\n        }\n      ],\n\n      response_format: {\n        type: \"json_schema\",\n        json_schema: {\n          name: \"recovery_semantic_extraction\",\n          strict: true,\n          schema: {\n            type: \"object\",\n            properties: {\n              tercero_mencionado: {\n                type: \"boolean\"\n              },\n              tercero_identificable: {\n                type: \"string\",\n                enum: [\"si\", \"parcial\", \"no\"]\n              },\n              senales_responsabilidad: {\n                type: \"string\",\n                enum: [\"ninguna\", \"bajas\", \"medias\", \"altas\"]\n              },\n              contradicciones_detectadas: {\n                type: \"boolean\"\n              },\n              detalle_contradicciones: {\n                type: \"array\",\n                items: {\n                  type: \"string\"\n                }\n              },\n              informacion_faltante: {\n                type: \"array\",\n                items: {\n                  type: \"string\"\n                }\n              },\n              limitacion_contractual: {\n                type: \"string\",\n                enum: [\"detectada\", \"no_detectada\", \"no_evaluable\"]\n              },\n              detalle_limitacion: {\n                type: \"string\"\n              },\n              resumen_semantico: {\n                type: \"string\"\n              }\n            },\n            required: [\n              \"tercero_mencionado\",\n              \"tercero_identificable\",\n              \"senales_responsabilidad\",\n              \"contradicciones_detectadas\",\n              \"detalle_contradicciones\",\n              \"informacion_faltante\",\n              \"limitacion_contractual\",\n              \"detalle_limitacion\",\n              \"resumen_semantico\"\n            ],\n            additionalProperties: false\n          }\n        }\n      }\n    }\n  };\n});\n\nreturn requests.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -784
+      ],
+      "id": "ba33e252-8318-4ff8-a89b-2dd22166eb7d",
+      "name": "BATCH-01 - Preparar Requests JSONL"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst jsonl = items\n  .map(item => JSON.stringify(item.json))\n  .join('\\n');\n\nconst buffer = Buffer.from(jsonl, 'utf8');\n\nreturn [{\n  json: {\n    cantidad_requests: items.length,\n    nombre_archivo: 'recovery-copilot-batch.jsonl'\n  },\n  binary: {\n    data: {\n      data: buffer.toString('base64'),\n      mimeType: 'application/jsonl',\n      fileName: 'recovery-copilot-batch.jsonl'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -784
+      ],
+      "id": "94a4b5c9-5b98-4df8-b7f2-e202b9feb7fb",
+      "name": "BATCH-02 - Generar Archivo JSONL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "batch"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1328,
+        -784
+      ],
+      "id": "709b6548-f68c-4d79-aa15-1b4f874e62c4",
+      "name": "BATCH-03 - Subir Archivo a OpenAI"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/batches",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"input_file_id\": \"{{ $json.id }}\",\n  \"endpoint\": \"/v1/chat/completions\",\n  \"completion_window\": \"24h\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1552,
+        -784
+      ],
+      "id": "ce3a9e28-2b53-40e5-ae4b-b5b3db4c7846",
+      "name": "BATCH-04 - Crear Batch OpenAI"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openai.com/v1/batches/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1776,
+        -784
+      ],
+      "id": "85226dd9-5244-4ae3-beab-7aee456f035e",
+      "name": "BATCH-05 - Consultar Estado Batch"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.openai.com/v1/files/{{ $json.output_file_id }}/content",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        -784
+      ],
+      "id": "20118f13-c3fb-4cc4-a1fa-c1166540ce48",
+      "name": "BATCH-06 - Obtener Resultados Batch"
+    },
+    {
+      "parameters": {
+        "content": "A. Ingesta y Validación",
+        "height": 800,
+        "width": 1200
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -416
+      ],
+      "id": "8e288bd3-49b7-49fb-b385-86be8496e5a5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "C.Human in the Loop",
+        "height": 672,
+        "width": 1200,
+        "color": "#E24646"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        448
+      ],
+      "id": "06d873a3-17e9-4d25-aaac-c5d101c759da",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "D. Batch API y Optimización",
+        "height": 320,
+        "width": 1552
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -896
+      ],
+      "id": "e227dd92-6b91-4ce7-af2d-a618ed3d1d21",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "06 - Extraer Señales Semánticas (IA)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 - Schedule Diario (Trigger)": {
+      "main": [
+        [
+          {
+            "node": "02 - Buscar Expedientes Pendientes (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 - Buscar Expedientes Pendientes (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "03 - Validar Ramo Elegible (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 - Validar Ramo Elegible (IF)": {
+      "main": [
+        [
+          {
+            "node": "04 - Validar Relato Mínimo (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "03A - Marcar No Elegible por Ramo (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 - Validar Relato Mínimo (IF)": {
+      "main": [
+        [
+          {
+            "node": "05 - Preparar Input IA (Edit Fields)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "04A - Marcar Información Insuficiente (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 - Preparar Input IA (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "06 - Extraer Señales Semánticas (IA)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "BATCH-01 - Preparar Requests JSONL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 - Extraer Señales Semánticas (IA)": {
+      "main": [
+        [
+          {
+            "node": "07 - Calcular Potencial (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERR-01 - Registrar Error IA (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 - Calcular Potencial (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "08 - Calcular Impacto (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 - Calcular Impacto (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "09 - Calcular Urgencia (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 - Calcular Urgencia (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "10 - Calcular Evidencia (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 - Calcular Evidencia (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "11 - Calcular Recovery Score (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 - Calcular Recovery Score (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "12 - Validar Tercero (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 - Validar Tercero (IF)": {
+      "main": [
+        [
+          {
+            "node": "14 - Detectar Limitación Contractual (IF)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "13A - Marcar No Elegible (Edit Fields)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13A - Marcar No Elegible (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "13B - Actualizar No Elegible (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 - Detectar Limitación Contractual (IF)": {
+      "main": [
+        [
+          {
+            "node": "15A - Activar Alerta Legal (Edit Fields)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15B - Sin Alerta Legal (Edit Fields)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15A - Activar Alerta Legal (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "16 - Unificar Ramas (Merge)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15B - Sin Alerta Legal (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "16 - Unificar Ramas (Merge)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "16 - Unificar Ramas (Merge)": {
+      "main": [
+        [
+          {
+            "node": "17 - Asignar Prioridad (Scoring)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 - Asignar Prioridad (Scoring)": {
+      "main": [
+        [
+          {
+            "node": "18 - Generar Mini Informe (Edit Fields)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18 - Generar Mini Informe (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "19 - Guardar Análisis (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 - Guardar Análisis (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "20 - Solicitar Revisión Humana (Gmail HITL)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LOG-01 - Registrar Procesamiento Exitoso (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERR-02 - Registrar Error Guardado (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "20 - Solicitar Revisión Humana (Gmail HITL)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "ERR-03 - Registrar Error HITL (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LOG-01 - Registrar Procesamiento Exitoso (Airtable)": {
+      "main": [
+        []
+      ]
+    },
+    "21 - Registrar Revisión Humana (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "22 - Enrutar Decisión Humana (Switch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22 - Enrutar Decisión Humana (Switch)": {
+      "main": [
+        [
+          {
+            "node": "23A - Aprobar Recupero (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "23B - Solicitar Información (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "23C - No Priorizar (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL-01 - Recibir Revisión Humana (Form Trigger)": {
+      "main": [
+        [
+          {
+            "node": "HITL-02 - Buscar Expediente (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL-02 - Buscar Expediente (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "21 - Registrar Revisión Humana (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BATCH-01 - Preparar Requests JSONL": {
+      "main": [
+        [
+          {
+            "node": "BATCH-02 - Generar Archivo JSONL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BATCH-02 - Generar Archivo JSONL": {
+      "main": [
+        [
+          {
+            "node": "BATCH-03 - Subir Archivo a OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BATCH-03 - Subir Archivo a OpenAI": {
+      "main": [
+        [
+          {
+            "node": "BATCH-04 - Crear Batch OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BATCH-04 - Crear Batch OpenAI": {
+      "main": [
+        [
+          {
+            "node": "BATCH-05 - Consultar Estado Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BATCH-05 - Consultar Estado Batch": {
+      "main": [
+        [
+          {
+            "node": "BATCH-06 - Obtener Resultados Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
