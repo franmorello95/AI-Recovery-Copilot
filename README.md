@@ -42,7 +42,3 @@ La Interface de dashboard se documenta mediante capturas y video por la limitaci
 - OpenAI Batch API ejecutada end-to-end: 8 requests, 8 completados, 0 fallidos.
 - Structured Outputs validado en las 8 respuestas Batch.
 - Prompt Caching medido: `cached_tokens = 0`; no se atribuye ahorro real a caching.
-
-## Video
-
-Demo de aproximadamente 3 minutos: [AGREGAR LINK FINAL]
