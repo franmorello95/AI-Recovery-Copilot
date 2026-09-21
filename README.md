@@ -42,3 +42,9 @@ La Interface de dashboard se documenta mediante capturas y video por la limitaci
 - OpenAI Batch API ejecutada end-to-end: 8 requests, 8 completados, 0 fallidos.
 - Structured Outputs validado en las 8 respuestas Batch.
 - Prompt Caching medido: `cached_tokens = 0`; no se atribuye ahorro real a caching.
+
+## Video Demo
+
+Demostración end-to-end del ecosistema AI Recovery Copilot, incluyendo procesamiento automático en n8n, análisis semántico con LLM, Batch API, revisión humana (HITL), persistencia en Airtable y monitoreo mediante dashboard.
+
+**Video demo (3 min):** [Ver demostración en YouTube](PEGAR_LINK_YOUTUBE)
