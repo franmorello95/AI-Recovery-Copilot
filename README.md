@@ -47,4 +47,4 @@ La Interface de dashboard se documenta mediante capturas y video por la limitaci
 
 Demostración end-to-end del ecosistema AI Recovery Copilot, incluyendo procesamiento automático en n8n, análisis semántico con LLM, Batch API, revisión humana (HITL), persistencia en Airtable y monitoreo mediante dashboard.
 
-**Video demo (3 min):** [Ver demostración en YouTube](PEGAR_LINK_YOUTUBE)
+**Video demo (3 min):** [Ver demostración en YouTube](https://www.youtube.com/watch?v=n7RWaP7O44c)
